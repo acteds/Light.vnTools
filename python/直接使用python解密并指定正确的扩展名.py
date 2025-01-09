@@ -13,23 +13,31 @@ REVERSED_KEY = KEY[::-1]
 
 def xor_data(data, key, reversed_key):
     """根据指定的规则对数据执行XOR操作"""
-    if len(data) < 100:
-        if len(data) <= 0:
+    data_length = len(data)
+    
+    # Convert bytes to bytearray for mutability
+    data = bytearray(data)
+
+    if data_length < 100:
+        if data_length <= 0:
             return data
 
         # XOR entire bytes for files less than 100 bytes
-        return bytes([data[i] ^ reversed_key[i % len(key)] for i in range(len(data))])
+        for i in range(data_length):
+            data[i] ^= reversed_key[i % len(key)]
     else:
-        # XOR the first 100 bytes
-        xorred_first = bytes([data[i] ^ key[i % len(key)] for i in range(100)])
-        
-        # XOR the last 99 bytes
-        xorred_last = bytes([data[len(data) - 99 + i] ^ reversed_key[i % len(key)] for i in range(99)])
-        
-        # Combine the parts: unchanged middle part + xorred first and last parts
-        middle_part = data[100:-99] if len(data) > 198 else b''
-        return xorred_first + middle_part + xorred_last
+        # XOR the first 100 bytes with KEY
+        for i in range(100):
+            data[i] ^= key[i % len(key)]
 
+        # XOR the last 99 bytes with REVERSED_KEY
+        for i in range(99):
+            if data_length - 99 + i < data_length:  # 确保索引不超出范围
+                data[data_length - 99 + i] ^= reversed_key[i % len(key)]
+
+    # Return as bytes
+    return bytes(data)
+        
 def is_vndat(file_path):
     """检查给定文件是否为.vndat文件（即ZIP格式）"""
     with open(file_path, 'rb') as f:
